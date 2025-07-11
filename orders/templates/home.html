@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,9 +11,9 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
+            min-height: 100vh;
+            margin: 0;
         }
-
         .container {
             background: white;
             padding: 25px 30px;
@@ -21,57 +22,29 @@
             width: 100%;
             max-width: 500px;
         }
-
-        h1 {
-            text-align: center;
-            color: #2d3436;
-        }
-
-        label {
-            font-weight: bold;
-        }
-
+        h1 { text-align: center; color: #2d3436; }
+        label { font-weight: bold; }
         input[type="text"] {
-            width: 100%;
-            padding: 8px;
-            margin-top: 5px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
+            width: 100%; padding: 8px; margin: 5px 0 15px;
+            border: 1px solid #ccc; border-radius: 6px;
         }
-
-        input[type="checkbox"],
-        input[type="radio"] {
-            margin-right: 6px;
-        }
-
+        input[type="checkbox"], input[type="radio"] { margin-right: 6px; }
         button {
-            background-color: #27ae60;
-            color: white;
-            padding: 10px 15px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 16px;
-            width: 100%;
+            background-color: #27ae60; color: white;
+            padding: 10px 15px; border: none; border-radius: 8px;
+            cursor: pointer; font-size: 16px; width: 100%;
         }
-
-        button:hover {
-            background-color: #219150;
-        }
-
+        button:hover { background-color: #219150; }
         #payNowSection {
-            margin: 15px 0;
-            text-align: center;
+            display: none; text-align: center; margin: 20px 0;
         }
-
         #payNowSection button {
             background-color: #2980b9;
         }
-
         #payNowSection button:hover {
             background-color: #2471a3;
         }
+        #payNowSection img { max-width: 200px; margin-top: 10px; }
     </style>
 </head>
 <body>
@@ -79,8 +52,7 @@
         <h1>Welcome to Chandrasekar Store 🏪</h1>
         <p style="text-align:center;">Order now and avoid the queue!</p>
 
-        <form id="orderForm" method="POST">
-            {% csrf_token %}
+        <form id="orderForm">
             <label>Name:</label>
             <input type="text" id="name" required>
 
@@ -98,10 +70,13 @@
             <input type="radio" name="payment" value="Pay at Shop" checked> Pay at Shop<br>
             <input type="radio" name="payment" value="Pay Online (PhonePe)"> Pay Online (PhonePe)<br><br>
 
-            <div id="payNowSection" style="display: none;">
-                <a href="upi://pay?pa=8807412430@ybl&pn=Chandrasekar%20Store" target="_blank">
+            <!-- Pay Online section with deep-link & QR fallback -->
+            <div id="payNowSection">
+                <a href="upi://pay?pa=8807412430@ybl&pn=Chandrasekar%20Store&cu=INR&am=" target="_blank">
                     <button type="button">👉 Click here to Pay Online</button>
                 </a>
+                <p>Or scan to pay:</p>
+                <img src="{% static 'qr.png' %}" alt="Scan UPI QR code">
             </div>
 
             <button type="submit">Place Order on WhatsApp</button>
@@ -109,53 +84,39 @@
     </div>
 
     <script>
-        // Show/hide "Pay Now" button based on payment method
-        const paymentRadios = document.querySelectorAll("input[name='payment']");
-        const payNowSection = document.getElementById("payNowSection");
+        // Toggle Pay Now section
+        const radios = document.querySelectorAll("input[name='payment']");
+        const paySection = document.getElementById("payNowSection");
+        radios.forEach(r => r.addEventListener("change", () => {
+            paySection.style.display = (r.value === "Pay Online (PhonePe)") ? "block" : "none";
+        }));
 
-        paymentRadios.forEach(radio => {
-            radio.addEventListener("change", function () {
-                payNowSection.style.display = (this.value === "Pay Online (PhonePe)") ? "block" : "none";
-            });
-        });
-
-        document.getElementById("orderForm").addEventListener("submit", function(event) {
-            event.preventDefault();
-
+        // Handle form and WhatsApp message
+        document.getElementById("orderForm").addEventListener("submit", function(e) {
+            e.preventDefault();
             const name = document.getElementById("name").value;
             const phone = document.getElementById("phone").value;
-
-            const items = [];
-            document.querySelectorAll("input[type=checkbox]:checked").forEach((item) => {
-                items.push(item.value);
-            });
-
+            const items = Array.from(document.querySelectorAll("input[type=checkbox]:checked"))
+                               .map(cb => cb.value);
             if (items.length === 0) {
                 alert("Please select at least one item.");
                 return;
             }
-
             const paymentMethod = document.querySelector("input[name='payment']:checked").value;
-
-            // 🕒 Estimated pickup time
+            // Estimate pickup time
             const now = new Date();
             now.setMinutes(now.getMinutes() + 15);
-            const estTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-
-            let extraLine = "";
+            const est = `${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}`;
+            // Add UPI line if online
+            let extra = "";
             if (paymentMethod === "Pay Online (PhonePe)") {
-                extraLine = "%0APhonePe UPI ID: 8807412430@ybl%0APay here: upi://pay?pa=8807412430@ybl&pn=Chandrasekar%20Store";
+                extra = `%0APhonePe UPI ID: 8807412430@ybl%0APay link: upi://pay?pa=8807412430@ybl&pn=Chandrasekar%20Store&cu=INR&am=`;
             }
-
-            const message = `🛒 *New Order from Chandrasekar Store* 🛒%0A
-Name: ${name}%0A
-Phone: ${phone}%0A
-Items: ${items.join(", ")}%0A
-Payment: ${paymentMethod}%0A
-🕒 Estimated Pickup: ${estTime}${extraLine}`;
-
-            const whatsappLink = `https://wa.me/918807412430?text=${message}`;
-            window.open(whatsappLink, '_blank');
+            const msg = `🛒 *New Order from Chandrasekar Store* 🛒%0A` +
+                        `Name: ${name}%0APhone: ${phone}%0A` +
+                        `Items: ${items.join(", ")}%0APayment: ${paymentMethod}%0A` +
+                        `🕒 Pickup by: ${est}${extra}`;
+            window.open(`https://wa.me/918807412430?text=${msg}`, '_blank');
         });
     </script>
 </body>
