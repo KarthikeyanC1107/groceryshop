@@ -72,7 +72,7 @@
 
             <!-- Pay Online section with deep-link & QR fallback -->
             <div id="payNowSection">
-                <a href="upi://pay?pa=8807412430@ybl&pn=Chandrasekar%20Store&cu=INR&am=" target="_blank">
+                <a href="upi://pay?pa=Q128155379@ybl&pn=Chandrasekar%20Store&cu=INR&am=" target="_blank">
                     <button type="button">👉 Click here to Pay Online</button>
                 </a>
                 <h3>Pay Online (Scan QR Code)</h3>
@@ -111,7 +111,7 @@
             // Add UPI line if online
             let extra = "";
             if (paymentMethod === "Pay Online (PhonePe)") {
-                extra = `%0APhonePe UPI ID: 8807412430@ybl%0APay link: upi://pay?pa=8807412430@ybl&pn=Chandrasekar%20Store&cu=INR&am=`;
+                extra = `%0APhonePe UPI ID: Q128155379@ybl%0APay link: upi://pay?pa=Q128155379@ybl&pn=Chandrasekar%20Store&cu=INR&am=`;
             }
             const msg = `🛒 *New Order from Chandrasekar Store* 🛒%0A` +
                         `Name: ${name}%0APhone: ${phone}%0A` +
